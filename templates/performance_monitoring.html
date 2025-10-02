@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Мониторинг производительности</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif performance_data %}
+    {% if performance_data.success %}
+        <div class="info-box">
+            <h3>Комплексный мониторинг производительности</h3>
+            <p>Время обновления: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p class="small-info">Агрегированные метрики по всей базе данных</p>
+        </div>
+
+        <div class="metrics-grid">
+            <!-- Общая статистика -->
+            <div class="metric-card">
+                <h3>📊 Всего таблиц</h3>
+                <div class="metric-value">{{ performance_data.total_tables }}</div>
+                <div class="metric-description">Пользовательских таблиц</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📈 Всего индексов</h3>
+                <div class="metric-value">{{ performance_data.total_indexes }}</div>
+                <div class="metric-description">Индексов в БД</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🔗 Подключения</h3>
+                <div class="metric-value">{{ performance_data.total_connections }}</div>
+                <div class="metric-description">Активных: {{ performance_data.active_connections }}</div>
+            </div>
+
+            <!-- Статистика строк -->
+            <div class="metric-card">
+                <h3>📥 Живые строки</h3>
+                <div class="metric-value">{{ performance_data.total_live_rows | number_format }}</div>
+                <div class="metric-description">Активные записи</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📤 Мертвые строки</h3>
+                <div class="metric-value">{{ performance_data.total_dead_rows | number_format }}</div>
+                <div class="metric-description">Требуют VACUUM</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📉 % Мертвых строк</h3>
+                <div class="metric-value {{ 'critical' if performance_data.dead_rows_ratio > 20 else 'warning' if performance_data.dead_rows_ratio > 10 else '' }}">
+                    {{ performance_data.dead_rows_ratio }}%
+                </div>
+                <div class="metric-description">Общий процент</div>
+            </div>
+
+            <!-- Статистика сканирований -->
+            <div class="metric-card">
+                <h3>🔍 Посл. сканы</h3>
+                <div class="metric-value">{{ performance_data.total_seq_scans | number_format }}</div>
+                <div class="metric-description">Полные сканирования</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🎯 Индекс сканы</h3>
+                <div class="metric-value">{{ performance_data.total_idx_scans | number_format }}</div>
+                <div class="metric-description">Сканирования по индексам</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⚡ % Использования индексов</h3>
+                <div class="metric-value {{ 'low-index-usage' if performance_data.index_usage_ratio < 50 else 'good-index-usage' }}">
+                    {{ performance_data.index_usage_ratio }}%
+                </div>
+                <div class="metric-description">Эффективность индексов</div>
+            </div>
+
+            <!-- Транзакции -->
+            <div class="metric-card">
+                <h3>✅ Коммиты</h3>
+                <div class="metric-value">{{ performance_data.commits | number_format }}</div>
+                <div class="metric-description">Успешные транзакции</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>❌ Роллбэки</h3>
+                <div class="metric-value">{{ performance_data.rollbacks | number_format }}</div>
+                <div class="metric-description">Отмененные транзакции</div>
+            </div>
+
+            <!-- Производительность -->
+            <div class="metric-card">
+                <h3>💾 Чтения с диска</h3>
+                <div class="metric-value">{{ performance_data.disk_reads | number_format }}</div>
+                <div class="metric-description">Блоков с диска</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🚀 Кеш-попадания</h3>
+                <div class="metric-value">{{ performance_data.cache_hits | number_format }}</div>
+                <div class="metric-description">Блоков из кеша</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⚡ Эффективность кеша</h3>
+                <div class="metric-value {{ 'low-index-usage' if performance_data.cache_hit_ratio < 90 else 'good-index-usage' }}">
+                    {{ performance_data.cache_hit_ratio }}%
+                </div>
+                <div class="metric-description">Общий процент</div>
+            </div>
+        </div>
+
+        <!-- Рекомендации -->
+        <div class="info-box">
+            <h4>Рекомендации по производительности:</h4>
+            <div class="recommendations">
+                {% if performance_data.dead_rows_ratio > 10 %}
+                <div class="recommendation critical">
+                    <strong>⚠️ Высокий процент мертвых строк ({{ performance_data.dead_rows_ratio }}%)</strong>
+                    <p>Рекомендуется выполнить VACUUM для освобождения пространства и улучшения производительности.</p>
+                </div>
+                {% endif %}
+
+                {% if performance_data.index_usage_ratio < 50 %}
+                <div class="recommendation warning">
+                    <strong>📉 Низкое использование индексов ({{ performance_data.index_usage_ratio }}%)</strong>
+                    <p>Рассмотрите добавление недостающих индексов или оптимизацию существующих запросов.</p>
+                </div>
+                {% endif %}
+
+                {% if performance_data.cache_hit_ratio < 90 %}
+                <div class="recommendation warning">
+                    <strong>💾 Низкая эффективность кеша ({{ performance_data.cache_hit_ratio }}%)</strong>
+                    <p>Возможно, требуется увеличение shared_buffers в конфигурации PostgreSQL.</p>
+                </div>
+                {% endif %}
+
+                {% if performance_data.total_dead_rows > 100000 %}
+                <div class="recommendation critical">
+                    <strong>🗑️ Большое количество мертвых строк ({{ performance_data.total_dead_rows | number_format }})</strong>
+                    <p>Выполните VACUUM ANALYZE для очистки и обновления статистики.</p>
+                </div>
+                {% endif %}
+
+                {% if performance_data.index_usage_ratio > 80 and performance_data.cache_hit_ratio > 95 %}
+                <div class="recommendation good">
+                    <strong>✅ Отличная производительность</strong>
+                    <p>База данных работает оптимально. Продолжайте мониторинг.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% else %}
+        <div class="alert alert-error">
+            Ошибка при получении метрик производительности: {{ performance_data.error }}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить метрики производительности
+    </div>
+{% endif %}
+
+<style>
+.recommendations {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recommendation {
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid;
+}
+
+.recommendation.critical {
+    background: #ffebee;
+    border-left-color: #c62828;
+}
+
+.recommendation.warning {
+    background: #fff3e0;
+    border-left-color: #ef6c00;
+}
+
+.recommendation.good {
+    background: #e8f5e8;
+    border-left-color: #2e7d32;
+}
+</style>
+{% endblock %}

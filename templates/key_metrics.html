@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Ключевые метрики базы данных</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif metrics %}
+    {% if metrics.success %}
+        <div class="info-box">
+            <h3>Текущая база данных: {{ metrics.datname }}</h3>
+            <p>Время обновления: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>👥 Подключения</h3>
+                <div class="metric-value">{{ metrics.connections }}</div>
+                <div class="metric-description">Активных подключений</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>✅ Коммиты</h3>
+                <div class="metric-value">{{ metrics.commits | number_format }}</div>
+                <div class="metric-description">Успешных транзакций</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>❌ Роллбэки</h3>
+                <div class="metric-value">{{ metrics.rollbacks | number_format }}</div>
+                <div class="metric-description">Отмененных транзакций</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📊 Соотношение</h3>
+                <div class="metric-value">{{ metrics.rollback_ratio }}%</div>
+                <div class="metric-description">Процент откатов</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📥 Вставки</h3>
+                <div class="metric-value">{{ metrics.rows_inserted | number_format }}</div>
+                <div class="metric-description">Вставленных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🔄 Обновления</h3>
+                <div class="metric-value">{{ metrics.rows_updated | number_format }}</div>
+                <div class="metric-description">Обновленных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🗑️ Удаления</h3>
+                <div class="metric-value">{{ metrics.rows_deleted | number_format }}</div>
+                <div class="metric-description">Удаленных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📤 Возвращено</h3>
+                <div class="metric-value">{{ metrics.rows_returned | number_format }}</div>
+                <div class="metric-description">Возвращенных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>💾 Чтения с диска</h3>
+                <div class="metric-value">{{ metrics.disk_reads | number_format }}</div>
+                <div class="metric-description">Блоков прочитано с диска</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🚀 Кеш-попадания</h3>
+                <div class="metric-value">{{ metrics.cache_hits | number_format }}</div>
+                <div class="metric-description">Блоков из кеша</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⚡ Эффективность кеша</h3>
+                <div class="metric-value">{{ metrics.cache_hit_ratio }}%</div>
+                <div class="metric-description">Процент попаданий в кеш</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Детальная информация</h3>
+            <table class="metrics-table">
+                <tr>
+                    <th>Метрика</th>
+                    <th>Значение</th>
+                </tr>
+                <tr>
+                    <td>Имя базы данных</td>
+                    <td><strong>{{ metrics.datname }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Активные подключения</td>
+                    <td>{{ metrics.connections }}</td>
+                </tr>
+                <tr>
+                    <td>Коммиты транзакций</td>
+                    <td>{{ metrics.commits | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Откаты транзакций</td>
+                    <td>{{ metrics.rollbacks | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Процент откатов</td>
+                    <td>{{ metrics.rollback_ratio }}%</td>
+                </tr>
+                <tr>
+                    <td>Чтения с диска</td>
+                    <td>{{ metrics.disk_reads | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Попадания в кеш</td>
+                    <td>{{ metrics.cache_hits | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Эффективность кеша</td>
+                    <td>{{ metrics.cache_hit_ratio }}%</td>
+                </tr>
+                <tr>
+                    <td>Возвращено строк</td>
+                    <td>{{ metrics.rows_returned | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Получено строк</td>
+                    <td>{{ metrics.rows_fetched | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Вставлено строк</td>
+                    <td>{{ metrics.rows_inserted | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Обновлено строк</td>
+                    <td>{{ metrics.rows_updated | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Удалено строк</td>
+                    <td>{{ metrics.rows_deleted | number_format }}</td>
+                </tr>
+            </table>
+        </div>
+
+    {% else %}
+        <div class="alert alert-error">
+            Ошибка при получении метрик: {{ metrics.error }}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить метрики базы данных
+    </div>
+{% endif %}
+{% endblock %}

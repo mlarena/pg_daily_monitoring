@@ -1,0 +1,203 @@
+1 создать приложение flask для мониторинга postgres 
+создать из шаблона:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        /* Основные стили в стиле хаки (khaki цвета: бежевый/зеленоватый, минималистичный военный дизайн) */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5dc; /* Бежевый фон для хаки-стиля */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #bdb76b; /* DarkKhaki */
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        #toggle-sidebar {
+            background-color: #f0e68c; /* Khaki */
+            border: none;
+            color: #333;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #toggle-sidebar:hover {
+            background-color: #d2b48c; /* Более темный оттенок */
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            margin-top: 60px; /* Высота header */
+            margin-bottom: 40px; /* Высота footer */
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #f0e68c; /* Khaki для боковой панели */
+            padding: 20px;
+            box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+            transition: width 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.hidden {
+            width: 0;
+            padding: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #bdb76b; /* DarkKhaki для ссылок */
+            transition: background-color 0.2s;
+            white-space: nowrap; /* Чтобы текст не переносился при сужении */
+        }
+
+        .sidebar a:hover {
+            background-color: #a52a2a; /* Коричневый акцент для ховер */
+            color: #fff;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fffaf0; /* Светлый хаки-фон для контента */
+            transition: flex 0.3s ease; /* Плавный переход для расширения */
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: #bdb76b; /* DarkKhaki */
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                top: 0; /* Относительно container */
+                left: 0;
+                height: calc(100vh - 100px);
+                z-index: 999;
+                transition: transform 0.3s ease;
+                width: 250px; /* Фиксированная ширина на мобильных */
+                padding: 20px;
+            }
+
+            .sidebar.hidden {
+                transform: translateX(-100%);
+                width: 250px; /* Сохраняем ширину, но сдвигаем */
+                padding: 20px;
+            }
+
+            .container {
+                flex-direction: row; /* Оставляем row, но sidebar absolute */
+                position: relative;
+            }
+
+            main {
+                width: 100%; /* На мобильных main всегда полный */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin Panel</h1>
+        <button id="toggle-sidebar">Toggle Menu</button>
+    </header>
+    <div class="container">
+        <nav class="sidebar">
+            <ul>
+                <li><a href="#connect_to_postgres">Подключение к Postgres</a></li>
+                <li><a href="#version_and_information">Версия и информация</a></li>
+                <li><a href="#settings">Settings</a></li>
+                <li><a href="#reports">Reports</a></li>
+                <li><a href="#logout">Logout</a></li>
+            </ul>
+        </nav>
+        <main>
+            <h2>Welcome to the Admin Dashboard</h2>
+            <p>This is the main content area. You can add tables, charts, or any admin tools here.</p>
+            <p>Example content: Manage users, view analytics, etc.</p>
+        </main>
+    </div>
+    <footer>
+        <p>&copy; 2025 Admin Panel. All rights reserved.</p>
+    </footer>
+    <script>
+        // Простой JS для toggle бокового меню
+        document.getElementById('toggle-sidebar').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>
+разделить на base.html и прочеее
+2 создать страницу connect_to_postgres отображение в  блоке main, где будет происходить подключение к серверу postgres указав в textbox
+dbname='postgres', user='postgres', password='', host='localhost', port='5432'
+с проверкой подключения. строку подключения сохранять в app.json
+3 на странице version_and_information (в блоке main) выводить информацию из запросов 
+-- Версия PostgreSQL
+SELECT version();
+
+-- Время работы сервера
+SELECT pg_postmaster_start_time();
+
+-- Текущий WAL position
+SELECT pg_current_wal_lsn();

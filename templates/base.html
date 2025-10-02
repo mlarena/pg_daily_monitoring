@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Admin Panel</h1>
+        <button id="toggle-sidebar">Toggle Menu</button>
+    </header>
+    <div class="container">
+        <nav class="sidebar">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Главная</a></li>
+                <li><a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a></li>
+                <li><a href="{{ url_for('version_and_information') }}">Версия и информация</a></li>
+                <li><a href="{{ url_for('key_metrics') }}">Ключевые метрики</a></li>
+                <li><a href="{{ url_for('general_statistics_for_tables') }}">Статистика таблиц</a></li>
+                
+                {% if has_pg_stat_statements %}
+                <!-- Пункты меню, доступные только при наличии pg_stat_statements -->
+                <li><a href="{{ url_for('full_detailed_query_with_all_metrics') }}">Детальная статистика</a></li>
+                <li><a href="{{ url_for('find_problematic_queries') }}">Поиск проблемных запросов</a></li>
+                <li><a href="{{ url_for('performance_monitoring') }}">Мониторинг производительности</a></li>
+                {% endif %}
+                
+                <li><a href="{{ url_for('settings') }}">Settings</a></li>
+                <li><a href="{{ url_for('reports') }}">Reports</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </nav>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <footer>
+        <p>&copy; 2025 Admin Panel. All rights reserved.</p>
+        {% if has_pg_stat_statements %}
+        <small style="margin-left: 20px;">✅ pg_stat_statements доступен</small>
+        {% else %}
+        <small style="margin-left: 20px;">❌ pg_stat_statements недоступен</small>
+        {% endif %}
+    </footer>
+    <script>
+        document.getElementById('toggle-sidebar').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

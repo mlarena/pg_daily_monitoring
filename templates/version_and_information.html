@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Версия и информация о PostgreSQL</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif postgres_info %}
+    {% if postgres_info.success %}
+        <div class="info-box">
+            <h3>Версия PostgreSQL:</h3>
+            <p>{{ postgres_info.version }}</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>Время запуска сервера:</h3>
+            <p>{{ postgres_info.start_time }}</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>Текущий WAL position:</h3>
+            <p>{{ postgres_info.wal_lsn }}</p>
+        </div>
+    {% else %}
+        <div class="alert alert-error">
+            Ошибка при получении информации: {{ postgres_info.error }}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить информацию о сервере
+    </div>
+{% endif %}
+{% endblock %}

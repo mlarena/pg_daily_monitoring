@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Поиск проблемных запросов</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif queries_data %}
+    {% if queries_data.success %}
+        <div class="info-box">
+            <h3>Проблемные запросы (топ-50 по общему времени выполнения)</h3>
+            <p>Время обновления: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p>Всего запросов: {{ queries_data.total_queries }}</p>
+            <p class="small-info">Запросы отсортированы по общему времени выполнения (по убыванию)</p>
+        </div>
+
+        <div class="table-container">
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Запрос</th>
+                        <th>Вызовы</th>
+                        <th>Общее время (мс)</th>
+                        <th>Среднее время (мс)</th>
+                        <th>Обработано строк</th>
+                        <th>Кеш-попадания</th>
+                        <th>Чтения с диска</th>
+                        <th>% Кеша</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for query in queries_data.queries %}
+                    <tr class="{{ 'warning' if query.avg_time > 100 else 'critical' if query.avg_time > 1000 else '' }}">
+                        <td class="query-text" title="{{ query.query }}">
+                            <code>{{ query.short_query }}</code>
+                        </td>
+                        <td class="number">{{ query.total_calls | number_format }}</td>
+                        <td class="number {{ 'critical' if query.total_time > 10000 else 'warning' if query.total_time > 1000 else '' }}">
+                            {{ "%.2f"|format(query.total_time) }}
+                        </td>
+                        <td class="number {{ 'critical' if query.avg_time > 1000 else 'warning' if query.avg_time > 100 else '' }}">
+                            {{ "%.2f"|format(query.avg_time) }}
+                        </td>
+                        <td class="number">{{ query.rows_processed | number_format }}</td>
+                        <td class="number">{{ query.cache_hits | number_format }}</td>
+                        <td class="number">{{ query.disk_reads | number_format }}</td>
+                        <td class="number {{ 'low-index-usage' if query.cache_hit_ratio < 90 else 'good-index-usage' }}">
+                            {{ "%.1f"|format(query.cache_hit_ratio) if query.cache_hit_ratio else 0 }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box">
+            <h4>Рекомендации по оптимизации:</h4>
+            <ul>
+                <li><strong>Высокое среднее время выполнения (>100мс)</strong> - рассмотрите оптимизацию запроса или добавление индексов</li>
+                <li><strong>Низкий процент кеш-попаданий (<90%)</strong> - возможно, требуется увеличение shared_buffers</li>
+                <li><strong>Большое количество чтений с диска</strong> - проверьте эффективность индексов</li>
+                <li><strong>Частые вызовы медленных запросов</strong> - рассмотрите кеширование на уровне приложения</li>
+            </ul>
+        </div>
+
+    {% else %}
+        <div class="alert alert-error">
+            {{ queries_data.error }}
+        </div>
+        
+        {% if "pg_stat_statements" in queries_data.error %}
+        <div class="info-box">
+            <h4>Как включить pg_stat_statements:</h4>
+            <ol>
+                <li>Добавьте в postgresql.conf: <code>shared_preload_libraries = 'pg_stat_statements'</code></li>
+                <li>Добавьте в postgresql.conf: <code>pg_stat_statements.track = all</code></li>
+                <li>Перезапустите PostgreSQL</li>
+                <li>Выполните в базе данных: <code>CREATE EXTENSION pg_stat_statements;</code></li>
+            </ol>
+        </div>
+        {% endif %}
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить статистику запросов
+    </div>
+{% endif %}
+
+<style>
+.query-text {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.query-text:hover {
+    white-space: normal;
+    overflow: visible;
+    background: #f9f9f9;
+}
+</style>
+{% endblock %}

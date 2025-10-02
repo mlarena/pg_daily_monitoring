@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% macro render_table(tables, table_stats) %}
+<table class="stats-table">
+    <thead>
+        <tr>
+            <th class="sortable" data-column="table_name" 
+                onmouseenter="showTooltip(event, 'table_name')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('table_name')">
+                Таблица 
+                {% if table_stats.sort_by == 'table_name' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="sequential_scans"
+                onmouseenter="showTooltip(event, 'sequential_scans')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('sequential_scans')">
+                Посл. сканы
+                {% if table_stats.sort_by == 'sequential_scans' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="seq_rows_read"
+                onmouseenter="showTooltip(event, 'seq_rows_read')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('seq_rows_read')">
+                Строк посл.
+                {% if table_stats.sort_by == 'seq_rows_read' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="index_scans"
+                onmouseenter="showTooltip(event, 'index_scans')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('index_scans')">
+                Индекс сканы
+                {% if table_stats.sort_by == 'index_scans' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="index_rows_fetched"
+                onmouseenter="showTooltip(event, 'index_rows_fetched')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('index_rows_fetched')">
+                Строк инд.
+                {% if table_stats.sort_by == 'index_rows_fetched' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="index_scan_ratio"
+                onmouseenter="showTooltip(event, 'index_scan_ratio')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('index_scan_ratio')">
+                % Индекс
+                {% if table_stats.sort_by == 'index_scan_ratio' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="inserts"
+                onmouseenter="showTooltip(event, 'inserts')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('inserts')">
+                Вставки
+                {% if table_stats.sort_by == 'inserts' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="updates"
+                onmouseenter="showTooltip(event, 'updates')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('updates')">
+                Обновления
+                {% if table_stats.sort_by == 'updates' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="deletes"
+                onmouseenter="showTooltip(event, 'deletes')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('deletes')">
+                Удаления
+                {% if table_stats.sort_by == 'deletes' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="hot_updates"
+                onmouseenter="showTooltip(event, 'hot_updates')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('hot_updates')">
+                HOT обн.
+                {% if table_stats.sort_by == 'hot_updates' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="live_rows"
+                onmouseenter="showTooltip(event, 'live_rows')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('live_rows')">
+                Живые строки
+                {% if table_stats.sort_by == 'live_rows' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="dead_rows"
+                onmouseenter="showTooltip(event, 'dead_rows')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('dead_rows')">
+                Мертвые строки
+                {% if table_stats.sort_by == 'dead_rows' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+            <th class="sortable" data-column="dead_row_ratio"
+                onmouseenter="showTooltip(event, 'dead_row_ratio')" 
+                onmouseleave="hideTooltip()"
+                onclick="sortTable('dead_row_ratio')">
+                % Мертвых
+                {% if table_stats.sort_by == 'dead_row_ratio' %}
+                    {{ '▼' if table_stats.sort_order == 'desc' else '▲' }}
+                {% endif %}
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for table in tables %}
+        <tr class="{{ 'high-dead-rows' if table.dead_row_ratio > 10 else '' }}">
+            <td class="table-name">
+                {% if not table_stats.group_by_schema %}
+                    <span class="schema-badge">{{ table.schemaname }}.</span>
+                {% endif %}
+                {{ table.table_name }}
+            </td>
+            <td class="number">{{ table.sequential_scans | number_format }}</td>
+            <td class="number">{{ table.seq_rows_read | number_format }}</td>
+            <td class="number">{{ table.index_scans | number_format }}</td>
+            <td class="number">{{ table.index_rows_fetched | number_format }}</td>
+            <td class="number {{ 'low-index-usage' if table.index_scan_ratio < 50 else 'good-index-usage' }}">
+                {{ "%.1f"|format(table.index_scan_ratio) }}%
+            </td>
+            <td class="number">{{ table.inserts | number_format }}</td>
+            <td class="number">{{ table.updates | number_format }}</td>
+            <td class="number">{{ table.deletes | number_format }}</td>
+            <td class="number">{{ table.hot_updates | number_format }}</td>
+            <td class="number">{{ table.live_rows | number_format }}</td>
+            <td class="number {{ 'warning' if table.dead_rows > 1000 else '' }}">
+                {{ table.dead_rows | number_format }}
+            </td>
+            <td class="number {{ 'critical' if table.dead_row_ratio > 20 else 'warning' if table.dead_row_ratio > 10 else '' }}">
+                {{ "%.1f"|format(table.dead_row_ratio) }}%
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+<h2>Общая статистика по таблицам</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif table_stats %}
+    {% if table_stats.success %}
+        <div class="info-box">
+            <h3>Статистика таблиц базы данных</h3>
+            <p>Время обновления: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p>Всего таблиц: {{ table_stats.total_tables }}</p>
+            <p class="small-info">
+                Сортировка: {{ table_stats.sort_by }} ({{ table_stats.sort_order }})
+                | Группировка: <span id="grouping-status">{{ 'ВКЛ' if table_stats.group_by_schema else 'ВЫКЛ' }}</span>
+                | Кликните по заголовку для сортировки
+                | Наведите на заголовок для подсказки
+            </p>
+        </div>
+
+        <!-- Панель управления -->
+        <div class="control-panel">
+            <div class="control-group">
+                <label>Сортировка:</label>
+                <select id="sort-select" onchange="changeSorting()">
+                    <option value="dead_rows" {% if table_stats.sort_by == 'dead_rows' %}selected{% endif %}>Мертвые строки</option>
+                    <option value="live_rows" {% if table_stats.sort_by == 'live_rows' %}selected{% endif %}>Живые строки</option>
+                    <option value="sequential_scans" {% if table_stats.sort_by == 'sequential_scans' %}selected{% endif %}>Посл. сканы</option>
+                    <option value="index_scans" {% if table_stats.sort_by == 'index_scans' %}selected{% endif %}>Индекс сканы</option>
+                    <option value="inserts" {% if table_stats.sort_by == 'inserts' %}selected{% endif %}>Вставки</option>
+                    <option value="updates" {% if table_stats.sort_by == 'updates' %}selected{% endif %}>Обновления</option>
+                    <option value="table_name" {% if table_stats.sort_by == 'table_name' %}selected{% endif %}>Имя таблицы</option>
+                    <option value="schemaname" {% if table_stats.sort_by == 'schemaname' %}selected{% endif %}>Схема</option>
+                </select>
+                
+                <select id="order-select" onchange="changeSorting()">
+                    <option value="desc" {% if table_stats.sort_order == 'desc' %}selected{% endif %}>По убыванию</option>
+                    <option value="asc" {% if table_stats.sort_order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn" onclick="toggleGrouping()" id="grouping-btn">
+                    {{ 'Выключить' if table_stats.group_by_schema else 'Включить' }} группировку
+                </button>
+                <button class="btn" onclick="toggleAllGroups()" id="toggle-all-btn" {% if not table_stats.group_by_schema %}style="display: none;"{% endif %}>
+                    Развернуть/Свернуть все
+                </button>
+                <button class="btn" onclick="resetSorting()">Сброс сортировки</button>
+            </div>
+        </div>
+
+        <!-- Подсказка - всегда видимая -->
+        <div id="column-tooltip" class="column-tooltip">
+            <div class="tooltip-default">
+                <strong>💡 Подсказка</strong><br>
+                Наведите курсор на любой заголовок таблицы, чтобы увидеть подробное описание метрики
+            </div>
+            <div class="tooltip-content" style="display: none;"></div>
+        </div>
+
+        <!-- Таблица с группировкой или без -->
+        <div class="table-container">
+            {% if table_stats.group_by_schema %}
+                <!-- Группировка по схемам -->
+                {% set grouped_tables = {} %}
+                {% for table in table_stats.tables %}
+                    {% set schema = table.schemaname %}
+                    {% if schema not in grouped_tables %}
+                        {% set _ = grouped_tables.update({schema: []}) %}
+                    {% endif %}
+                    {% set _ = grouped_tables[schema].append(table) %}
+                {% endfor %}
+
+                {% for schema, tables_in_schema in grouped_tables.items() %}
+                <div class="schema-group" data-schema="{{ schema }}">
+                    <div class="schema-header" onclick="toggleSchema('{{ schema }}')">
+                        <span class="toggle-icon">▶</span>
+                        <strong>{{ schema }}</strong>
+                        <span class="schema-stats">
+                            (таблиц: {{ tables_in_schema|length }}, 
+                            живых строк: {{ tables_in_schema | sum(attribute='live_rows') | number_format }},
+                            мертвых строк: {{ tables_in_schema | sum(attribute='dead_rows') | number_format }})
+                        </span>
+                    </div>
+                    
+                    <div class="schema-content" id="schema-{{ schema }}" style="display: none;">
+                        {{ render_table(tables_in_schema, table_stats) }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- Без группировки - плоская таблица -->
+                {{ render_table(table_stats.tables, table_stats) }}
+            {% endif %}
+        </div>
+
+        <!-- Легенда -->
+        <div class="info-box">
+            <h4>Легенда:</h4>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color critical"></span>
+                    <span>Высокий % мертвых строк (>20%) - требуется VACUUM</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color warning"></span>
+                    <span>Повышенный % мертвых строк (10-20%) - рекомендуется VACUUM</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color low-index-usage"></span>
+                    <span>Низкое использование индексов (<50%)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript для управления интерфейсом -->
+        <script>
+            // Текущие параметры
+            let currentSortBy = '{{ table_stats.sort_by }}';
+            let currentSortOrder = '{{ table_stats.sort_order }}';
+            let currentGroupBySchema = {{ 'true' if table_stats.group_by_schema else 'false' }};
+            
+            // Подсказки для столбцов
+            const columnDescriptions = {
+                'table_name': 'Имя таблицы в базе данных',
+                'sequential_scans': 'Количество последовательных сканирований таблицы (полное чтение таблицы)',
+                'seq_rows_read': 'Количество строк, прочитанных при последовательных сканированиях',
+                'index_scans': 'Количество индексных сканирований таблицы',
+                'index_rows_fetched': 'Количество строк, полученных через индексы',
+                'index_scan_ratio': 'Процент сканирований, использующих индексы. Низкие значения (<50%) могут указывать на неоптимальные индексы',
+                'inserts': 'Количество операций INSERT',
+                'updates': 'Количество операций UPDATE',
+                'deletes': 'Количество операций DELETE',
+                'hot_updates': 'Количество HOT (Heap Only Tuple) обновлений - эффективных обновлений без создания новых версий строк',
+                'live_rows': 'Количество "живых" (активных) строк в таблице',
+                'dead_rows': 'Количество "мертвых" строк (удаленных или устаревших), которые требуют VACUUM',
+                'dead_row_ratio': 'Процент мертвых строк. Высокие значения (>10%) указывают на необходимость VACUUM'
+            };
+            
+           // Функция для показа подсказки
+    function showTooltip(event, column) {
+        const tooltip = document.getElementById('column-tooltip');
+        const defaultContent = tooltip.querySelector('.tooltip-default');
+        const tooltipContent = tooltip.querySelector('.tooltip-content');
+        const description = columnDescriptions[column] || 'Описание отсутствует';
+        
+        // Скрываем стандартное сообщение и показываем контент подсказки
+        defaultContent.style.display = 'none';
+        tooltipContent.style.display = 'block';
+        tooltipContent.innerHTML = `<strong>${event.target.textContent.trim()}</strong><br>${description}`;
+        
+        tooltip.style.display = 'block';
+        
+        // Позиционируем подсказку рядом с курсором
+        const x = event.pageX + 10;
+        const y = event.pageY + 10;
+        
+        // Проверяем, чтобы подсказка не выходила за границы экрана
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        let finalX = x;
+        let finalY = y;
+        
+        // Если подсказка выходит за правый край, позиционируем слева от курсора
+        if (x + tooltipRect.width > windowWidth - 20) {
+            finalX = event.pageX - tooltipRect.width - 10;
+        }
+        
+        // Если подсказка выходит за нижний край, позиционируем выше курсора
+        if (y + tooltipRect.height > windowHeight - 20) {
+            finalY = event.pageY - tooltipRect.height - 10;
+        }
+        
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+        
+        // Убираем фиксированное позиционирование при наведении
+        tooltip.style.bottom = 'auto';
+        tooltip.style.right = 'auto';
+    }
+    
+    // Функция для скрытия подсказки
+    function hideTooltip() {
+        const tooltip = document.getElementById('column-tooltip');
+        const defaultContent = tooltip.querySelector('.tooltip-default');
+        const tooltipContent = tooltip.querySelector('.tooltip-content');
+        
+        // Возвращаем стандартное сообщение
+        tooltipContent.style.display = 'none';
+        defaultContent.style.display = 'block';
+        
+        // Оставляем блок видимым, но возвращаем на место
+        tooltip.style.display = 'block';
+        tooltip.style.left = '20px';
+        tooltip.style.top = 'auto';
+        tooltip.style.bottom = '20px';
+        tooltip.style.right = '20px';
+    }
+            
+            // Функция для изменения сортировки
+            function changeSorting() {
+                const sortBy = document.getElementById('sort-select').value;
+                const sortOrder = document.getElementById('order-select').value;
+                
+                updateURL({ sort_by: sortBy, sort_order: sortOrder });
+            }
+            
+            // Функция для сортировки по клику на заголовок
+            function sortTable(column) {
+                let newSortOrder = 'desc';
+                
+                if (currentSortBy === column) {
+                    newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+                }
+                
+                updateURL({ sort_by: column, sort_order: newSortOrder });
+            }
+            
+            // Функция переключения группировки
+            function toggleGrouping() {
+                updateURL({ group_by_schema: !currentGroupBySchema });
+            }
+            
+            // Функция сброса сортировки
+            function resetSorting() {
+                updateURL({ sort_by: 'dead_rows', sort_order: 'desc' });
+            }
+            
+            // Функции для управления группами
+            function toggleSchema(schema) {
+                const content = document.getElementById('schema-' + schema);
+                const icon = content.previousElementSibling.querySelector('.toggle-icon');
+                
+                if (content.style.display === 'none') {
+                    content.style.display = 'block';
+                    icon.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    icon.textContent = '▶';
+                }
+            }
+            
+            function toggleAllGroups() {
+                const allContents = document.querySelectorAll('.schema-content');
+                const allIcons = document.querySelectorAll('.toggle-icon');
+                
+                const isAnyOpen = Array.from(allContents).some(content => content.style.display !== 'none');
+                
+                allContents.forEach(content => {
+                    content.style.display = isAnyOpen ? 'none' : 'block';
+                });
+                
+                allIcons.forEach(icon => {
+                    icon.textContent = isAnyOpen ? '▶' : '▼';
+                });
+            }
+            
+            // Общая функция обновления URL
+            function updateURL(params) {
+                const url = new URL(window.location.href);
+                
+                Object.keys(params).forEach(key => {
+                    if (params[key] !== null && params[key] !== undefined) {
+                        url.searchParams.set(key, params[key]);
+                    } else {
+                        url.searchParams.delete(key);
+                    }
+                });
+                
+                window.location.href = url.toString();
+            }
+            
+            // Инициализация при загрузке
+            document.addEventListener('DOMContentLoaded', function() {
+                // Позиционируем подсказку в правом нижнем углу
+                hideTooltip();
+                
+                // Автоматически раскрываем первую схему при загрузке с группировкой
+                if (currentGroupBySchema) {
+                    const firstSchema = document.querySelector('.schema-group');
+                    if (firstSchema) {
+                        toggleSchema(firstSchema.dataset.schema);
+                    }
+                }
+            });
+        </script>
+
+    {% else %}
+        <div class="alert alert-error">
+            Ошибка при получении статистики таблиц: {{ table_stats.error }}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить статистику таблиц
+    </div>
+{% endif %}
+{% endblock %}

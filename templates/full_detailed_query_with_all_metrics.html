@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Детальная статистика базы данных</h2>
+
+{% if not connected %}
+    <div class="alert alert-error">
+        Сначала необходимо подключиться к PostgreSQL серверу на странице <a href="{{ url_for('connect_to_postgres') }}">Подключение к Postgres</a>
+    </div>
+{% elif detailed_metrics %}
+    {% if detailed_metrics.success %}
+        <div class="info-box">
+            <h3>Полная детальная статистика</h3>
+            <p>Время обновления: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p>База данных: {{ detailed_metrics.database_name }}</p>
+        </div>
+
+        <div class="metrics-grid">
+            <!-- Базовая информация -->
+            <div class="metric-card">
+                <h3>📊 База данных</h3>
+                <div class="metric-value">{{ detailed_metrics.database_name }}</div>
+                <div class="metric-description">Текущая БД</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>👤 Пользователь</h3>
+                <div class="metric-value">{{ detailed_metrics.current_user }}</div>
+                <div class="metric-description">Текущий пользователь</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>💾 Размер БД</h3>
+                <div class="metric-value">{{ "%.1f"|format(detailed_metrics.database_size_gb) }} GB</div>
+                <div class="metric-description">{{ detailed_metrics.database_size_mb }} MB</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⏱️ Uptime</h3>
+                <div class="metric-value">{{ "%.1f"|format(detailed_metrics.uptime_seconds / 3600) }} ч</div>
+                <div class="metric-description">{{ "%.0f"|format(detailed_metrics.uptime_seconds) }} сек</div>
+            </div>
+
+            <!-- Подключения -->
+            <div class="metric-card">
+                <h3>🔗 Всего подключений</h3>
+                <div class="metric-value">{{ detailed_metrics.total_connections }}</div>
+                <div class="metric-description">Активных: {{ detailed_metrics.active_connections }}</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>💤 Idle подключения</h3>
+                <div class="metric-value">{{ detailed_metrics.idle_connections }}</div>
+                <div class="metric-description">Ожидающие подключения</div>
+            </div>
+
+            <!-- Транзакции -->
+            <div class="metric-card">
+                <h3>✅ Коммиты</h3>
+                <div class="metric-value">{{ detailed_metrics.total_commits | number_format }}</div>
+                <div class="metric-description">Успешные транзакции</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>❌ Роллбэки</h3>
+                <div class="metric-value">{{ detailed_metrics.total_rollbacks | number_format }}</div>
+                <div class="metric-description">Отмененные транзакции</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>📊 % Роллбэков</h3>
+                <div class="metric-value">{{ detailed_metrics.rollback_ratio }}%</div>
+                <div class="metric-description">Процент откатов</div>
+            </div>
+
+            <!-- Производительность -->
+            <div class="metric-card">
+                <h3>💾 Чтения с диска</h3>
+                <div class="metric-value">{{ detailed_metrics.blocks_read | number_format }}</div>
+                <div class="metric-description">Блоков прочитано</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🚀 Кеш-попадания</h3>
+                <div class="metric-value">{{ detailed_metrics.blocks_hit | number_format }}</div>
+                <div class="metric-description">Блоков из кеша</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>⚡ Эффективность кеша</h3>
+                <div class="metric-value">{{ detailed_metrics.cache_hit_ratio }}%</div>
+                <div class="metric-description">Процент попаданий</div>
+            </div>
+
+            <!-- Операции -->
+            <div class="metric-card">
+                <h3>📥 Вставки</h3>
+                <div class="metric-value">{{ detailed_metrics.tuples_inserted | number_format }}</div>
+                <div class="metric-description">Вставленных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🔄 Обновления</h3>
+                <div class="metric-value">{{ detailed_metrics.tuples_updated | number_format }}</div>
+                <div class="metric-description">Обновленных строк</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>🗑️ Удаления</h3>
+                <div class="metric-value">{{ detailed_metrics.tuples_deleted | number_format }}</div>
+                <div class="metric-description">Удаленных строк</div>
+            </div>
+        </div>
+
+        <!-- Детальная таблица -->
+        <div class="info-box">
+            <h3>Детальная информация</h3>
+            <table class="metrics-table">
+                <tr>
+                    <th>Параметр</th>
+                    <th>Значение</th>
+                </tr>
+                <tr>
+                    <td>Имя базы данных</td>
+                    <td><strong>{{ detailed_metrics.database_name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Текущий пользователь</td>
+                    <td>{{ detailed_metrics.current_user }}</td>
+                </tr>
+                <tr>
+                    <td>Сервер</td>
+                    <td>{{ detailed_metrics.server_address }}:{{ detailed_metrics.server_port }}</td>
+                </tr>
+                <tr>
+                    <td>Размер базы данных</td>
+                    <td>{{ "%.2f"|format(detailed_metrics.database_size_gb) }} GB ({{ detailed_metrics.database_size_mb }} MB)</td>
+                </tr>
+                <tr>
+                    <td>Время работы</td>
+                    <td>{{ "%.1f"|format(detailed_metrics.uptime_seconds / 3600) }} часов</td>
+                </tr>
+                <tr>
+                    <td>Всего подключений</td>
+                    <td>{{ detailed_metrics.total_connections }}</td>
+                </tr>
+                <tr>
+                    <td>Активные подключения</td>
+                    <td>{{ detailed_metrics.active_connections }}</td>
+                </tr>
+                <tr>
+                    <td>Idle подключения</td>
+                    <td>{{ detailed_metrics.idle_connections }}</td>
+                </tr>
+                <tr>
+                    <td>Коммиты транзакций</td>
+                    <td>{{ detailed_metrics.total_commits | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Откаты транзакций</td>
+                    <td>{{ detailed_metrics.total_rollbacks | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Процент откатов</td>
+                    <td>{{ detailed_metrics.rollback_ratio }}%</td>
+                </tr>
+                <tr>
+                    <td>Чтения с диска</td>
+                    <td>{{ detailed_metrics.blocks_read | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Попадания в кеш</td>
+                    <td>{{ detailed_metrics.blocks_hit | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Эффективность кеша</td>
+                    <td>{{ detailed_metrics.cache_hit_ratio }}%</td>
+                </tr>
+                <tr>
+                    <td>Возвращено строк</td>
+                    <td>{{ detailed_metrics.tuples_returned | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Получено строк</td>
+                    <td>{{ detailed_metrics.tuples_fetched | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Вставлено строк</td>
+                    <td>{{ detailed_metrics.tuples_inserted | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Обновлено строк</td>
+                    <td>{{ detailed_metrics.tuples_updated | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Удалено строк</td>
+                    <td>{{ detailed_metrics.tuples_deleted | number_format }}</td>
+                </tr>
+                <tr>
+                    <td>Shared buffers</td>
+                    <td>{{ detailed_metrics.shared_buffers }}</td>
+                </tr>
+                <tr>
+                    <td>Work memory</td>
+                    <td>{{ detailed_metrics.work_mem }}</td>
+                </tr>
+                <tr>
+                    <td>Maintenance work memory</td>
+                    <td>{{ detailed_metrics.maintenance_work_mem }}</td>
+                </tr>
+            </table>
+        </div>
+
+    {% else %}
+        <div class="alert alert-error">
+            Ошибка при получении детальной статистики: {{ detailed_metrics.error }}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="alert alert-error">
+        Не удалось получить детальную статистику
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Подключение к PostgreSQL</h2>
+
+{% if connection_status %}
+    <div class="alert {% if connection_status.success %}alert-success{% else %}alert-error{% endif %}">
+        {{ connection_status.message }}
+    </div>
+{% endif %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="dbname">Имя базы данных:</label>
+        <input type="text" id="dbname" name="dbname" value="{{ config.get('dbname', 'postgres') }}" required>
+        {% if databases_list %}
+        <div class="small-info">
+            Доступные базы данных: {{ databases_list | join(', ') }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="form-group">
+        <label for="user">Пользователь:</label>
+        <input type="text" id="user" name="user" value="{{ config.get('user', 'postgres') }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="password">Пароль:</label>
+        <input type="password" id="password" name="password" value="{{ config.get('password', '') }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="host">Хост:</label>
+        <input type="text" id="host" name="host" value="{{ config.get('host', 'localhost') }}" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="port">Порт:</label>
+        <input type="text" id="port" name="port" value="{{ config.get('port', '5432') }}" required>
+    </div>
+    
+    <button type="submit" class="btn">Проверить подключение</button>
+</form>
+
+{% if connection_string %}
+<div class="info-box">
+    <h4>Строка подключения:</h4>
+    <code>{{ connection_string }}</code>
+</div>
+{% endif %}
+
+<div class="info-box">
+    <h4>Текущий статус подключения:</h4>
+    <p>
+        {% if config %}
+            ✅ Настроено подключение к {{ config.host }}:{{ config.port }}/{{ config.dbname }}
+        {% else %}
+            ❌ Подключение не настроено
+        {% endif %}
+    </p>
+</div>
+
+{% if config and config.connection_string %}
+<div class="info-box">
+    <h4>Проверка текущей базы данных:</h4>
+    <a href="{{ url_for('version_and_information') }}" class="btn">Проверить информацию о БД</a>
+    <a href="{{ url_for('debug_database') }}" class="btn">Отладочная информация</a>
+</div>
+{% endif %}
+{% endblock %}

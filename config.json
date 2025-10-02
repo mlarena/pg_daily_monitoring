@@ -1,0 +1,11 @@
+{
+    "postgres": {
+        "dbname": "task_management",
+        "user": "postgres",
+        "password": "12345678",
+        "host": "localhost",
+        "port": "5432",
+        "connection_string": "dbname='task_management' user='postgres' password='12345678' host='localhost' port='5432'",
+        "has_pg_stat_statements": false
+    }
+}
